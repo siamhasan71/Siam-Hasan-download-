@@ -1,0 +1,6 @@
+{
+  "name": "OmniSnap Video Downloader",
+  "description": "Download HD videos and audio without watermarks from YouTube, TikTok, Instagram Reels, and Facebook in seconds with sleek futuristic SaaS speed.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
