@@ -21,7 +21,13 @@ export function detectPlatform(url: string): Platform {
   if (clean.includes('tiktok.com') || clean.includes('douyin.com')) return 'tiktok';
   if (clean.includes('instagram.com') || clean.includes('instagr.am')) return 'instagram';
   if (clean.includes('youtube.com') || clean.includes('youtu.be')) return 'youtube';
-  if (clean.includes('facebook.com') || clean.includes('fb.watch') || clean.includes('fb.com')) return 'facebook';
+  if (
+    clean.includes('facebook.com') ||
+    clean.includes('fb.watch') ||
+    clean.includes('fb.com') ||
+    clean.includes('fb.gg') ||
+    clean.includes('fb.me')
+  ) return 'facebook';
   return 'unknown';
 }
 

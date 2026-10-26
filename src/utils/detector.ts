@@ -56,10 +56,13 @@ export async function downloadMediaFile(
   const isCORSConstrained =
     video.platform === 'tiktok' ||
     video.platform === 'instagram' ||
+    video.platform === 'facebook' ||
     directVideoUrl.includes('tiktok') ||
     directVideoUrl.includes('tikwm') ||
     directVideoUrl.includes('byteoversea') ||
-    directVideoUrl.includes('cdninstagram');
+    directVideoUrl.includes('cdninstagram') ||
+    directVideoUrl.includes('facebook') ||
+    directVideoUrl.includes('fbcdn.net');
 
   // Strategy 1: Attempt direct client-side blob fetching first (for same-origin or CORS-open URLs)
   if (!isCORSConstrained) {

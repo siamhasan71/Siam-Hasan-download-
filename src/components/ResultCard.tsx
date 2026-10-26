@@ -118,9 +118,30 @@ export const ResultCard: React.FC<ResultCardProps> = ({
     }
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(video.url);
-    onToast('success', 'Original clean video link copied to clipboard!');
+  const handleCopyLink = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        await navigator.clipboard.writeText(video.url);
+        onToast('success', 'Original clean video link copied to clipboard!');
+        return;
+      }
+    } catch (e) {
+      console.warn('Clipboard writeText restricted by browser permissions policy, trying fallback:', e);
+    }
+
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = video.url;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      onToast('success', 'Original clean video link copied to clipboard!');
+    } catch {
+      onToast('info', `Link: ${video.url}`);
+    }
   };
 
   return (

@@ -32,29 +32,28 @@ export const DownloadInputBar: React.FC<DownloadInputBarProps> = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [pasteSuccess, setPasteSuccess] = useState(false);
-  // Default to readonly so virtual keyboard doesn't pop up on mobile tap
-  const [isReadOnly, setIsReadOnly] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const detectedPlatform = detectPlatform(url);
 
+  /**
+   * Manual Paste Handler:
+   * ONLY triggered when the user explicitly clicks the "Paste" button.
+   * Completely decoupled from input field click or focus events.
+   */
   const pasteClipboard = async () => {
-    try {
-      if (navigator.clipboard && navigator.clipboard.readText) {
+    if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
+      try {
         const text = await navigator.clipboard.readText();
-        const inputEl = document.getElementById("linkInput") as HTMLInputElement | null;
-        if (inputEl) {
-          inputEl.value = text;
-        }
         if (text && text.trim()) {
           setUrl(text.trim());
           setPasteSuccess(true);
           onToast('success', 'Link pasted from clipboard!');
           setTimeout(() => setPasteSuccess(false), 2000);
 
-          // পেস্ট হওয়ার পর নিচে স্ক্রল করা
+          // Scroll down smoothly after explicit paste
           window.scrollBy({
-            top: 250, // কতটুকু নিচে নামবে তার পিক্সেল
+            top: 250,
             behavior: 'smooth'
           });
           return;
@@ -62,19 +61,19 @@ export const DownloadInputBar: React.FC<DownloadInputBarProps> = ({
           onToast('info', 'Clipboard is empty. Copy a link first!');
           return;
         }
+      } catch (err: unknown) {
+        console.warn('Clipboard readText restricted by browser permissions policy:', err);
       }
-      setIsReadOnly(false);
-      onToast('info', 'Please paste manually. Keyboard unlocked.');
-    } catch (err) {
-      console.error('Clipboard error: ', err);
-      // Unlock keyboard so user can manually paste if browser blocks direct clipboard API
-      setIsReadOnly(false);
-      onToast('info', 'Clipboard access denied. Keyboard unlocked for manual paste.');
-      setTimeout(() => inputRef.current?.focus(), 100);
     }
+
+    // Fallback if browser blocks direct clipboard API access:
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+    onToast('info', 'Please paste manually (Ctrl+V / Long-press on mobile).');
   };
 
-  // Expose pasteClipboard globally for direct onclick compatibility
+  // Expose pasteClipboard globally for explicit button onclick compatibility
   useEffect(() => {
     (window as unknown as { pasteClipboard: () => Promise<void> }).pasteClipboard = pasteClipboard;
     return () => {
@@ -84,9 +83,7 @@ export const DownloadInputBar: React.FC<DownloadInputBarProps> = ({
 
   const handleClear = () => {
     setUrl('');
-    if (!isReadOnly) {
-      inputRef.current?.focus();
-    }
+    inputRef.current?.focus();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -140,30 +137,21 @@ export const DownloadInputBar: React.FC<DownloadInputBarProps> = ({
               )}
             </div>
 
-            {/* The Text Input - readonly used to prevent mobile keyboard from popping up */}
+            {/* The Text Input - 100% manual and clean, no auto-paste on click or focus */}
             <input
               ref={inputRef}
               id="linkInput"
               type="text"
-              readOnly={isReadOnly}
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              onClick={() => {
-                // If readonly and empty, tapping directly pastes from clipboard without keyboard popup
-                if (isReadOnly && !url.trim()) {
-                  pasteClipboard();
-                }
-              }}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               onKeyDown={handleKeyDown}
-              placeholder={isReadOnly ? "Paste link here" : "Type or paste video link here..."}
-              className={`w-full py-3.5 pl-2 pr-32 sm:pr-36 bg-transparent text-white placeholder-slate-400 text-sm sm:text-base font-medium focus:outline-none ${
-                isReadOnly ? 'cursor-pointer select-none sm:select-text' : 'cursor-text'
-              }`}
+              placeholder="Paste or type video link here..."
+              className="w-full py-3.5 pl-2 pr-28 sm:pr-32 bg-transparent text-white placeholder-slate-400 text-sm sm:text-base font-medium focus:outline-none cursor-text"
             />
 
-            {/* Action Buttons inside Input (Clear, Keyboard Toggle & Paste) */}
+            {/* Action Buttons inside Input (Clear & Paste) */}
             <div className="absolute right-2 flex items-center gap-1.5">
               {/* Clear button */}
               {url && (
@@ -177,34 +165,6 @@ export const DownloadInputBar: React.FC<DownloadInputBarProps> = ({
                   <X className="w-4 h-4" />
                 </button>
               )}
-
-              {/* Mode Toggle: No Keyboard vs Keyboard */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (isReadOnly) {
-                    setIsReadOnly(false);
-                    onToast('info', 'Keyboard enabled for manual typing');
-                    setTimeout(() => inputRef.current?.focus(), 50);
-                  } else {
-                    setIsReadOnly(true);
-                    onToast('info', 'No-keyboard mode activated (Fast paste)');
-                  }
-                }}
-                className={`p-1.5 rounded-lg border transition text-xs flex items-center gap-1 cursor-pointer ${
-                  isReadOnly 
-                    ? 'border-slate-800 bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-700/60' 
-                    : 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300'
-                }`}
-                title={isReadOnly ? "Keyboard is hidden. Click to enable typing" : "Keyboard enabled. Click to disable"}
-                aria-label={isReadOnly ? "Enable keyboard" : "Disable keyboard"}
-              >
-                {isReadOnly ? (
-                  <span className="text-[11px] font-medium hidden sm:inline text-slate-400">Type</span>
-                ) : (
-                  <span className="text-[11px] font-semibold text-emerald-300 hidden sm:inline">Editing</span>
-                )}
-              </button>
 
               {/* Prominent Paste Button */}
               <button
