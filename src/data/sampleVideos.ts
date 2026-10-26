@@ -3,7 +3,7 @@ import { VideoMetadata } from '../types';
 export const SAMPLE_VIDEOS: Record<string, VideoMetadata> = {
   tiktok: {
     id: 'tt-8849201',
-    url: 'https://www.tiktok.com/@creator/video/734892019482910',
+    url: 'https://www.tiktok.com/@tiktok/video/7106594312292453675',
     platform: 'tiktok',
     title: 'Neon Cyberpunk Night Walk in Shibuya Tokyo · 4K 60FPS Raw Footage',
     author: {

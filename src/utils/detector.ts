@@ -53,33 +53,43 @@ export async function downloadMediaFile(
 
   if (onProgress) onProgress(15);
 
-  // Strategy 1: Attempt direct client-side blob fetching first (if CORS allowed)
-  try {
-    if (onProgress) onProgress(30);
-    const directRes = await fetch(directVideoUrl, { mode: 'cors' });
-    if (directRes.ok) {
-      if (onProgress) onProgress(65);
-      const blob = await directRes.blob();
-      if (blob.size > 1024) {
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = blobUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
+  const isCORSConstrained =
+    video.platform === 'tiktok' ||
+    video.platform === 'instagram' ||
+    directVideoUrl.includes('tiktok') ||
+    directVideoUrl.includes('tikwm') ||
+    directVideoUrl.includes('byteoversea') ||
+    directVideoUrl.includes('cdninstagram');
 
-        setTimeout(() => {
-          window.URL.revokeObjectURL(blobUrl);
-          document.body.removeChild(a);
-        }, 1500);
+  // Strategy 1: Attempt direct client-side blob fetching first (for same-origin or CORS-open URLs)
+  if (!isCORSConstrained) {
+    try {
+      if (onProgress) onProgress(30);
+      const directRes = await fetch(directVideoUrl, { mode: 'cors' });
+      if (directRes.ok) {
+        if (onProgress) onProgress(65);
+        const blob = await directRes.blob();
+        if (blob.size > 1024) {
+          const blobUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = blobUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
 
-        if (onProgress) onProgress(100);
-        return { success: true, filename };
+          setTimeout(() => {
+            window.URL.revokeObjectURL(blobUrl);
+            document.body.removeChild(a);
+          }, 1500);
+
+          if (onProgress) onProgress(100);
+          return { success: true, filename };
+        }
       }
+    } catch (corsErr) {
+      console.warn('Direct client blob fetch restricted by CORS, routing via streaming proxy with Content-Disposition headers', corsErr);
     }
-  } catch (corsErr) {
-    console.warn('Direct client blob fetch restricted by CORS, routing via streaming proxy with Content-Disposition headers', corsErr);
   }
 
   // Strategy 2: Proxy through server streaming endpoint (/api/download-stream)
